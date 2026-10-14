@@ -1,0 +1,221 @@
+Open Mongodb compass 
+url (mongodb://127.0.0.1:27017/   or mongodb://127.0.0.1:27017)
+db:studentdb
+collection:students
+ cmd
+npm init -y
+npm install express mongoose
+
+server.js
+
+
+const express = require("express");
+const mongoose = require("mongoose");
+
+const app = express();
+
+app.use(express.json());
+app.use(express.static("public"));
+
+mongoose.connect("mongodb://127.0.0.1:27017/studentdb")
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log(err));
+
+const Student = mongoose.model("Student", {
+    name: String,
+    department: String,
+    year: Number
+});
+
+// CREATE
+app.post("/students", async (req, res) => {
+    try {
+        if (!req.body.name || !req.body.department ||
+            req.body.year == null || req.body.year === "") {
+            return res.status(400).send("All fields are required");
+        }
+
+        const student = await Student.create(req.body);
+        res.json(student);
+    } catch (err) {
+        res.status(500).send("Error adding student");
+    }
+});
+
+// READ
+app.get("/students", async (req, res) => {
+    try {
+        const students = await Student.find();
+        res.json(students);
+    } catch (err) {
+        res.status(500).send("Error fetching students");
+    }
+});
+
+// UPDATE
+app.put("/students/:id", async (req, res) => {
+    try {
+        const student = await Student.findByIdAndUpdate(
+            req.params.id, req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!student)
+            return res.status(404).send("Student not found");
+
+        res.json(student);
+    } catch (err) {
+        res.status(400).send("Error updating student");
+    }
+});
+
+// DELETE
+app.delete("/students/:id", async (req, res) => {
+    try {
+        const student = await Student.findByIdAndDelete(req.params.id);
+
+        if (!student)
+            return res.status(404).send("Student not found");
+
+        res.send("Student deleted successfully");
+    } catch (err) {
+        res.status(400).send("Error deleting student");
+    }
+});
+
+app.listen(3000, () => {
+    console.log("Server running at http://localhost:3000");
+});
+
+
+public/index.html
+
+
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+    <title>Student Management</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+
+<body ng-controller="myCtrl">
+
+    <h2>Student Management System</h2>
+
+    <form ng-submit="saveStudent()">
+        <input ng-model="student.name"
+               placeholder="Student Name" required>
+
+        <input ng-model="student.department"
+               placeholder="Department" required>
+
+        <input type="number" ng-model="student.year"
+               placeholder="Year" min="1" required>
+
+        <button type="submit">
+            {{student._id ? 'Update Student' : 'Add Student'}}
+        </button>
+
+        <button type="button" ng-click="cancelEdit()"
+                ng-if="student._id">Cancel</button>
+    </form>
+
+    <p>{{message}}</p>
+
+    <h3>Student List</h3>
+
+    <input ng-model="searchName" placeholder="Search by name">
+
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Actions</th>
+        </tr>
+
+        <tr ng-repeat="s in students | filter:{name:searchName}">
+            <td>{{s.name}}</td>
+            <td>{{s.department}}</td>
+            <td>{{s.year}}</td>
+            <td>
+                <button ng-click="editStudent(s)">Edit</button>
+                <button ng-click="deleteStudent(s._id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var app = angular.module("myApp", []);
+
+        app.controller("myCtrl", function($scope, $http) {
+            $scope.student = {};
+            $scope.students = [];
+            $scope.message = "";
+
+            $scope.loadStudents = function() {
+                $http.get("/students").then(function(res) {
+                    $scope.students = res.data;
+                }, function() {
+                    $scope.message = "Error loading students";
+                });
+            };
+
+            $scope.saveStudent = function() {
+                var request;
+
+                if ($scope.student._id) {
+                    request = $http.put(
+                        "/students/" + $scope.student._id,
+                        $scope.student
+                    );
+                } else {
+                    request = $http.post("/students", $scope.student);
+                }
+
+                request.then(function(res) {
+                    $scope.message = $scope.student._id
+                        ? "Student updated successfully"
+                        : "Student added successfully";
+
+                    $scope.student = {};
+                    $scope.loadStudents();
+                }, function(res) {
+                    $scope.message = res.data ||
+                        "Operation failed";
+                });
+            };
+
+            $scope.editStudent = function(s) {
+                $scope.student = angular.copy(s);
+                $scope.message = "Edit the details and click Update";
+            };
+
+            $scope.cancelEdit = function() {
+                $scope.student = {};
+                $scope.message = "";
+            };
+
+            $scope.deleteStudent = function(id) {
+                if (confirm("Delete this student?")) {
+                    $http.delete("/students/" + id)
+                    .then(function(res) {
+                        $scope.message = res.data;
+                        $scope.loadStudents();
+                    }, function(res) {
+                        $scope.message = res.data ||
+                            "Error deleting student";
+                    });
+                }
+            };
+
+            $scope.loadStudents();
+        });
+    </script>
+
+</body>
+</html>
+
+
+run:
+node server.js

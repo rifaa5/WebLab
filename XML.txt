@@ -1,0 +1,119 @@
+XML-dtd 
+
+students.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE students SYSTEM "students.dtd">
+
+<students>
+    <student>
+        <name>Riya</name>
+        <department>IT</department>
+        <year>3</year>
+    </student>
+
+    <student>
+        <name>Arun</name>
+        <department>CSE</department>
+        <year>2</year>
+    </student>
+</students>
+
+students.dtd
+
+<!ELEMENT students (student+)>
+<!ELEMENT student (name, department, year)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT department (#PCDATA)>
+<!ELEMENT year (#PCDATA)>
+
+validate.py
+
+from lxml import etree
+
+parser = etree.XMLParser(dtd_validation=True)
+
+try:
+    etree.parse("students.xml", parser)
+    print("XML is valid")
+except etree.XMLSyntaxError as e:
+    print("XML is invalid")
+    print(e)
+
+cmd
+pip install lxml
+python validate.py
+
+XML-formatter
+
+Create folder- XMLFormatter
+
+students.xml
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/css" href="students.css"?>
+
+<students>
+    <student>
+        <name>Riya</name>
+        <department>IT</department>
+        <year>3</year>
+    </student>
+    <student>
+        <name>Arun</name>
+        <department>CSE</department>
+        <year>2</year>
+    </student>
+    <student>
+        <name>Priya</name>
+        <department>ECE</department>
+        <year>3</year>
+    </student>
+</students>
+
+students.css
+
+
+students {
+    display: block;
+    font-family: Arial;
+    background: #f5f7fa;
+    padding: 20px;
+}
+
+students::before {
+    content: "STUDENT MANAGEMENT";
+    display: block;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+student {
+    display: block;
+    background: white;
+    border: 1px solid #ccc;
+    margin: 12px;
+    padding: 15px;
+    width: 300px;
+}
+
+name {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: blue;
+    margin-bottom: 8px;
+}
+
+department, year {
+    display: block;
+    margin-top: 8px;
+}
+
+Run:
+cd XMLFormatter
+python -m http.server 8000
+
+(url: http://localhost:8000/students.xml)

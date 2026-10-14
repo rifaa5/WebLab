@@ -1,0 +1,103 @@
+New cmd
+pip install selenium
+
+test_student.py
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+driver = webdriver.Chrome()
+wait = WebDriverWait(driver, 10)
+
+try:
+    # Open website
+    driver.get("http://127.0.0.1:3000")
+
+    # 1. INTERFACE TESTING
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//h2[contains(text(),'Student Management')]")
+    ))
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//input[@placeholder='Student Name']")
+    ))
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//input[@placeholder='Department']")
+    ))
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//input[@placeholder='Year']")
+    ))
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//button[@type='submit']")
+    ))
+
+    print("Interface Testing: PASS")
+
+    # 2. FUNCTIONAL TESTING - ADD STUDENT
+    driver.find_element(
+        By.XPATH, "//input[@placeholder='Student Name']"
+    ).send_keys("SeleniumTest")
+
+    driver.find_element(
+        By.XPATH, "//input[@placeholder='Department']"
+    ).send_keys("IT")
+
+    driver.find_element(
+        By.XPATH, "//input[@placeholder='Year']"
+    ).send_keys("3")
+
+    driver.find_element(
+        By.XPATH, "//button[@type='submit']"
+    ).click()
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//td[text()='SeleniumTest']")
+    ))
+
+    print("Functional Testing: PASS")
+
+    # 3. NEGATIVE TESTING - EMPTY FORM
+    name = driver.find_element(
+        By.XPATH, "//input[@placeholder='Student Name']"
+    )
+
+    name.clear()
+
+    driver.find_element(
+        By.XPATH, "//input[@placeholder='Department']"
+    ).clear()
+
+    driver.find_element(
+        By.XPATH, "//input[@placeholder='Year']"
+    ).clear()
+
+    driver.find_element(
+        By.XPATH, "//button[@type='submit']"
+    ).click()
+
+    if name.get_attribute("required") is not None:
+        print("Negative Testing: PASS")
+    else:
+        print("Negative Testing: FAIL")
+
+    # 4. USABILITY TESTING - SEARCH
+    name.send_keys("SeleniumTest")
+
+    wait.until(EC.visibility_of_element_located(
+        (By.XPATH, "//td[text()='SeleniumTest']")
+    ))
+
+    print("Usability Testing: PASS")
+
+    print("All Selenium tests completed.")
+
+finally:
+    driver.quit()
+
+run:
+python test_student.py
