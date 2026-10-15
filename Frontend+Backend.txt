@@ -1,14 +1,15 @@
-Open Mongodb compass 
-url (mongodb://127.0.0.1:27017/   or mongodb://127.0.0.1:27017)
-db:studentdb
-collection:students
+Open Mongodb atlas
+ connect to cluster -copy connection String
+
+ create .env 
+ MONGO_URI=mongodb+srv://<db_username>:<db_password>@cluster0.whhft2w.mongodb.net/studentdb
  cmd
 npm init -y
-npm install express mongoose
+npm install express mongoose dotenv
 
 server.js
 
-
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 
@@ -17,17 +18,16 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://127.0.0.1:27017/studentdb")
-.then(() => console.log("MongoDB Connected"))
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("MongoDB Atlas Connected"))
 .catch(err => console.log(err));
 
 const Student = mongoose.model("Student", {
-    name: String,
-    department: String,
-    year: Number
+    name: { type: String, required: true },
+    department: { type: String, required: true },
+    year: { type: Number, required: true, min: 1 }
 });
 
-// CREATE
 app.post("/students", async (req, res) => {
     try {
         if (!req.body.name || !req.body.department ||
@@ -42,7 +42,7 @@ app.post("/students", async (req, res) => {
     }
 });
 
-// READ
+
 app.get("/students", async (req, res) => {
     try {
         const students = await Student.find();
@@ -52,11 +52,11 @@ app.get("/students", async (req, res) => {
     }
 });
 
-// UPDATE
 app.put("/students/:id", async (req, res) => {
     try {
         const student = await Student.findByIdAndUpdate(
-            req.params.id, req.body,
+            req.params.id,
+            req.body,
             { new: true, runValidators: true }
         );
 
@@ -69,7 +69,6 @@ app.put("/students/:id", async (req, res) => {
     }
 });
 
-// DELETE
 app.delete("/students/:id", async (req, res) => {
     try {
         const student = await Student.findByIdAndDelete(req.params.id);
@@ -91,11 +90,53 @@ app.listen(3000, () => {
 public/index.html
 
 
+
 <!DOCTYPE html>
 <html ng-app="myApp">
 <head>
     <title>Student Management</title>
+
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-animate.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+        }
+
+        input, select, button {
+            padding: 8px;
+            margin: 5px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+        }
+
+        .ng-enter {
+            transition: 0.4s;
+            opacity: 0;
+        }
+
+        .ng-enter-active {
+            opacity: 1;
+        }
+
+        .ng-leave {
+            transition: 0.4s;
+            opacity: 1;
+        }
+
+        .ng-leave-active {
+            opacity: 0;
+        }
+    </style>
 </head>
 
 <body ng-controller="myCtrl">
@@ -106,8 +147,13 @@ public/index.html
         <input ng-model="student.name"
                placeholder="Student Name" required>
 
-        <input ng-model="student.department"
-               placeholder="Department" required>
+        <select ng-model="student.department" required>
+            <option value="">Select Department</option>
+            <option value="IT">IT</option>
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="EEE">EEE</option>
+        </select>
 
         <input type="number" ng-model="student.year"
                placeholder="Year" min="1" required>
@@ -126,6 +172,14 @@ public/index.html
 
     <input ng-model="searchName" placeholder="Search by name">
 
+    <select ng-model="filterDepartment">
+        <option value="">All Departments</option>
+        <option value="IT">IT</option>
+        <option value="CSE">CSE</option>
+        <option value="ECE">ECE</option>
+        <option value="EEE">EEE</option>
+    </select>
+
     <table border="1" cellpadding="8">
         <tr>
             <th>Name</th>
@@ -134,7 +188,8 @@ public/index.html
             <th>Actions</th>
         </tr>
 
-        <tr ng-repeat="s in students | filter:{name:searchName}">
+        <tr ng-repeat="s in students | filter:{name:searchName, department:filterDepartment}"
+            class="student-row">
             <td>{{s.name}}</td>
             <td>{{s.department}}</td>
             <td>{{s.year}}</td>
@@ -146,12 +201,14 @@ public/index.html
     </table>
 
     <script>
-        var app = angular.module("myApp", []);
+        var app = angular.module("myApp", ["ngAnimate"]);
 
         app.controller("myCtrl", function($scope, $http) {
             $scope.student = {};
             $scope.students = [];
             $scope.message = "";
+            $scope.searchName = "";
+            $scope.filterDepartment = "";
 
             $scope.loadStudents = function() {
                 $http.get("/students").then(function(res) {
@@ -162,9 +219,10 @@ public/index.html
             };
 
             $scope.saveStudent = function() {
+                var editing = !!$scope.student._id;
                 var request;
 
-                if ($scope.student._id) {
+                if (editing) {
                     request = $http.put(
                         "/students/" + $scope.student._id,
                         $scope.student
@@ -174,15 +232,14 @@ public/index.html
                 }
 
                 request.then(function(res) {
-                    $scope.message = $scope.student._id
+                    $scope.message = editing
                         ? "Student updated successfully"
                         : "Student added successfully";
 
                     $scope.student = {};
                     $scope.loadStudents();
                 }, function(res) {
-                    $scope.message = res.data ||
-                        "Operation failed";
+                    $scope.message = res.data || "Operation failed";
                 });
             };
 
@@ -215,6 +272,7 @@ public/index.html
 
 </body>
 </html>
+
 
 
 run:

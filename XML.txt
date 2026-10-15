@@ -27,6 +27,7 @@ students.dtd
 <!ELEMENT department (#PCDATA)>
 <!ELEMENT year (#PCDATA)>
 
+
 validate.py
 
 from lxml import etree
@@ -40,6 +41,8 @@ except etree.XMLSyntaxError as e:
     print("XML is invalid")
     print(e)
 
+
+
 cmd
 pip install lxml
 python validate.py
@@ -49,7 +52,6 @@ XML-formatter
 Create folder- XMLFormatter
 
 students.xml
-
 
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/css" href="students.css"?>
@@ -73,7 +75,6 @@ students.xml
 </students>
 
 students.css
-
 
 students {
     display: block;
@@ -111,6 +112,7 @@ department, year {
     display: block;
     margin-top: 8px;
 }
+
 
 Run:
 cd XMLFormatter
